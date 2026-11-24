@@ -1,0 +1,46 @@
+# Builds the Windows version and tests the exe with Python removed from PATH.
+# Run it from the Actions tab ("Run workflow"). The zip is attached to the run as an artifact.
+name: Windows-bygg
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Bygg (tester, PyInstaller, selvtest, zip)
+        shell: cmd
+        run: build_windows.bat
+
+      - name: Selvtest uten Python på PATH
+        shell: pwsh
+        run: |
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -and $_ -notmatch '(?i)python|hostedtoolcache|\.venv|WindowsApps' }) -join ';'
+          $zip = Get-ChildItem dist\Kundedatabase-*-windows.zip | Select-Object -First 1
+          $target = Join-Path $env:RUNNER_TEMP "utpakket"
+          Expand-Archive $zip.FullName -DestinationPath $target
+          $exe = Join-Path $target "Kundedatabase\Kundedatabase.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList "--selftest" -Wait -PassThru
+          Get-Content (Join-Path $env:APPDATA "Kundedatabase\selftest.log")
+          if ($p.ExitCode -ne 0) { throw "Selvtest feilet ($($p.ExitCode))" }
+
+      # Needs internet; allowed to fail so a Kartverket outage never blocks a build.
+      - name: Geotest (Kartverket over HTTPS, får feile)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP "utpakket\Kundedatabase\Kundedatabase.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList "--geotest" -Wait -PassThru
+          Get-Content (Join-Path $env:APPDATA "Kundedatabase\geotest.log")
+          if ($p.ExitCode -ne 0) { throw "Geotest feilet ($($p.ExitCode))" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Kundedatabase-windows
+          path: dist/Kundedatabase-*-windows.zip

@@ -1,0 +1,2 @@
+openpyxl>=3.1  # Excel import/export
+pytest>=7.0

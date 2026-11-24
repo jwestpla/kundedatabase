@@ -1,0 +1,21 @@
+__pycache__/
+.DS_Store
+*.pyc
+.pytest_cache/
+.venv/
+
+# Customer data – personal data, never commit
+data/
+*.db
+*.db-journal
+*.xlsx
+*.kml
+kart_*.html
+*.log
+utvalg.json
+sample/
+
+# Build output
+build/
+dist/
+.venv-build/
