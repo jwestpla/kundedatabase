@@ -4,7 +4,8 @@ import pytest
 
 from kundedb.models import Customer
 from kundedb.validation import (
-    Matrikkel, cell_text, is_valid_email, is_valid_org_nr, normalize, pad4, parse_gnr_bnr, split_gnr_bnr, warnings,
+    Matrikkel, cell_text, format_fruit, is_valid_email, is_valid_org_nr, normalize, pad4, parse_gnr_bnr, split_fruit,
+    split_gnr_bnr, warnings,
 )
 
 
@@ -98,3 +99,27 @@ def test_warnings():
 def test_warning_for_conflicting_kommunenr():
     w = warnings(normalize(Customer(company="x", kommunenr="4640", gnr_bnr="4642-12/3")))
     assert any("4642" in m and "4640" in m for m in w)
+
+
+@pytest.mark.parametrize("text, known, other", [
+    ("Eple", ["Eple"], []),
+    ("eple, pære", ["Eple", "Pære"], []),
+    ("Plommer og kirsebær", ["Plomme", "Kirsebær"], []),
+    ("Moreller", ["Kirsebær"], []),
+    ("Pære/Plomme; epler", ["Eple", "Pære", "Plomme"], []),
+    ("apples and pears", ["Eple", "Pære"], []),
+    ("kirsebær, Kirsebær, eple", ["Eple", "Kirsebær"], []),
+    ("eple, bringebær, Bringebær", ["Eple"], ["bringebær"]),
+    ("", [], []),
+    (None, [], []),
+])
+def test_split_fruit(text, known, other):
+    assert split_fruit(text) == (known, other)
+
+
+def test_fruit_normalized_and_warned():
+    c = normalize(Customer(company="x", fruit="plommer og EPLER"))
+    assert c.fruit == "Eple, Plomme"
+    assert normalize(Customer(company="x", fruit="  ")).fruit is None
+    assert format_fruit([], []) is None
+    assert any("ukjent «rips»" in w for w in warnings(normalize(Customer(company="x", fruit="eple, rips"))))

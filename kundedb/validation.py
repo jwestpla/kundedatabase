@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 
-from .models import DATA_FIELDS, Customer
+from .models import DATA_FIELDS, FRUITS, Customer
 
 _ORG_NR_WEIGHTS = (3, 2, 7, 6, 5, 4, 3, 2)
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -86,10 +86,46 @@ def normalize(c: Customer) -> Customer:
     values["postcode"] = pad4(values["postcode"])
     values["kommunenr"] = pad4(values["kommunenr"])
     values["org_nr"] = normalize_org_nr(values["org_nr"])
+    values["fruit"] = format_fruit(*split_fruit(values["fruit"]))
     props = parse_gnr_bnr(values["gnr_bnr"])
     gnr, bnr = (props[0].gnr, props[0].bnr) if props else (None, None)
     notes = c.notes.strip() if c.notes and c.notes.strip() else None
     return replace(c, **values, gnr=gnr, bnr=bnr, notes=notes)
+
+
+# --- Fruit ----------------------------------------------------------------------------------------
+
+_FRUIT_ALIASES: dict[str, str] = {}
+for _name, _words in {
+    "Eple": ("eple", "epler", "eplet", "eplene", "apple", "apples"),
+    "Pære": ("pære", "pærer", "pæra", "pærene", "paere", "paerer", "pear", "pears"),
+    "Plomme": ("plomme", "plommer", "plomma", "plommene", "plum", "plums"),
+    "Kirsebær": ("kirsebær", "kirsebaer", "morell", "moreller", "morellene", "søtkirsebær", "surkirsebær",
+                 "cherry", "cherries"),
+}.items():
+    for _word in _words:
+        _FRUIT_ALIASES[_word] = _name
+_FRUIT_SPLIT = re.compile(r"[,;/+&\n]|\bog\b|\band\b", re.IGNORECASE)
+
+
+def split_fruit(text: str | None) -> tuple[list[str], list[str]]:
+    """(known fruit in FRUITS order, other words as written) from e.g. 'Plommer og kirsebær, eple'."""
+    known: set[str] = set()
+    other: list[str] = []
+    for part in _FRUIT_SPLIT.split(text or ""):
+        word = part.strip(" .-")
+        if not word:
+            continue
+        name = _FRUIT_ALIASES.get(word.casefold())
+        if name:
+            known.add(name)
+        elif word.casefold() not in {o.casefold() for o in other}:
+            other.append(word)
+    return [f for f in FRUITS if f in known], other
+
+
+def format_fruit(known: list[str], other: list[str] = ()) -> str | None:  # type: ignore[assignment]
+    return ", ".join([*known, *other]) or None
 
 
 # --- Gnr / bnr ----------------------------------------------------------------------------------
@@ -165,6 +201,10 @@ def warnings(c: Customer) -> list[str]:
         out.append(f"Postnummer «{c.postcode}» skal ha 4 siffer.")
     if c.kommunenr and not is_four_digits(c.kommunenr):
         out.append(f"Kommunenr «{c.kommunenr}» skal ha 4 siffer.")
+    if c.fruit:
+        _known, other = split_fruit(c.fruit)
+        if other:
+            out.append(f"Frukt: ukjent «{', '.join(other)}» (kjente: {', '.join(FRUITS)}). Lagret som skrevet.")
     if c.gnr_bnr:
         props, bad = split_gnr_bnr(c.gnr_bnr)
         if bad:

@@ -4,7 +4,7 @@ from kundedb import excel_io, repo
 from kundedb.excel_io import MERGE, REPLACE, ExcelError, import_customers, read_sheet
 from kundedb.models import Customer
 
-from .conftest import HEADERS, make_xlsx
+from .conftest import HEADERS, OLD_HEADERS, make_xlsx
 
 ROW_A = ["Testgård AS", "Ås", "Frukt", "Kari Nordmann", "kari@example.no", "Gardsvegen 1", 1430, 923609016,
          "12/3", 3218, 91234567]
@@ -28,12 +28,13 @@ def test_read_sheet_converts_numbers_and_pads(tmp_path):
 
 def test_tolerant_headers_on_a_later_row(tmp_path):
     headers = ["  FIRMA ", "sted", "Kategori", "fullt  navn", "E-POST", "adresse 1", "Postnummer ", "Org.nr.",
-               "Gnr og bnr", "kommunenr", "Telefon-mobilnr", "Egen kolonne"]
-    path = make_xlsx(tmp_path / "k.xlsx", [["Kundeliste 2026"], [], headers, [*ROW_A, "x"]])
+               "Gnr og bnr", "kommunenr", "Telefon-mobilnr", " frukt", "Egen kolonne"]
+    path = make_xlsx(tmp_path / "k.xlsx", [["Kundeliste 2026"], [], headers, [*ROW_A, "eple", "x"]])
     sheet = read_sheet(path)
     assert sheet.header_row == 3
     assert sheet.missing == []
     assert sheet.unknown_headers == ["Egen kolonne"]
+    assert read_sheet(make_xlsx(tmp_path / "old.xlsx", [OLD_HEADERS, ROW_A])).missing == ["Frukt"]
     assert sheet.rows[0][0] == 4  # Excel row number
 
 
@@ -74,7 +75,7 @@ def test_merge_by_org_nr_then_name(conn, tmp_path):
 
 def test_empty_cells_do_not_erase(conn, tmp_path):
     repo.save_customer(conn, Customer(company="A", full_name="B", phone="123"))
-    sheet = read_sheet(make_xlsx(tmp_path / "k.xlsx", [HEADERS, ["A", "Ås", "", "B", "", "", "", "", "", "", ""]]))
+    sheet = read_sheet(make_xlsx(tmp_path / "k.xlsx", [HEADERS, ["A", "Ås", "", "B", "", "", "", "", "", "", "", ""]]))
     s = import_customers(conn, sheet, MERGE)
     assert s.updated == 1
     c = repo.list_customers(conn)[0]
@@ -137,16 +138,36 @@ def test_export_options_and_text_cells(conn, tmp_path):
     from openpyxl import load_workbook
 
     repo.save_customer(conn, Customer(company="A", postcode="0150", kommunenr="0301", org_nr="923609016",
-                                      phone="04712345", notes="n", lat=59.9, lon=10.7, geocode_source="manuell"))
+                                      phone="04712345", notes="n", fruit="Eple", lat=59.9, lon=10.7, geocode_source="manuell"))
     customers = repo.list_customers(conn)
     path = excel_io.export_customers(tmp_path / "a.xlsx", customers, coordinates=False, notes=False)
     ws = load_workbook(path).active
     assert [c.value for c in ws[1]] == HEADERS
-    assert ws[1][0].font.bold and ws.auto_filter.ref == "A1:K2"
+    assert ws[1][0].font.bold and ws.auto_filter.ref == "A1:L2"
     row = {h: c for h, c in zip(HEADERS, ws[2])}
-    for header in ("Postnummer", "Kommunenr", "Org.nr", "Telefon - Mobilnr."):
+    for header in ("Postnummer", "Kommunenr", "Org.nr", "Telefon - Mobilnr.", "Frukt"):
         assert row[header].number_format == "@" and isinstance(row[header].value, str)
     assert row["Postnummer"].value == "0150" and row["Telefon - Mobilnr."].value == "04712345"
     ws = load_workbook(excel_io.export_customers(tmp_path / "b.xlsx", customers, coordinates=True, notes=False)).active
-    assert [c.value for c in ws[1]][11:] == ["Breddegrad", "Lengdegrad", "Koordinatkilde"]
-    assert ws["L2"].value == 59.9
+    assert [c.value for c in ws[1]][12:] == ["Breddegrad", "Lengdegrad", "Koordinatkilde"]
+    assert ws["M2"].value == 59.9
+
+
+def test_fruit_column_import_merge_and_export(conn, tmp_path):
+    rows = [HEADERS, [*ROW_A, "Plommer og kirsebær, EPLE"], [*ROW_B, "moreller / bringebær"]]
+    s = import_customers(conn, read_sheet(make_xlsx(tmp_path / "k.xlsx", rows)), MERGE)
+    assert s.new == 2
+    by_name = {c.full_name: c for c in repo.list_customers(conn)}
+    assert by_name["Kari Nordmann"].fruit == "Eple, Plomme, Kirsebær"
+    assert by_name["Ola Nordmann"].fruit == "Kirsebær, bringebær"
+    assert any("ukjent «bringebær»" in w for w in s.warnings)
+    # an old 11-column file does not touch the stored fruit
+    again = import_customers(conn, read_sheet(make_xlsx(tmp_path / "old.xlsx", [OLD_HEADERS, ROW_A])), MERGE)
+    assert again.unchanged == 1
+    assert repo.get_customer(conn, by_name["Kari Nordmann"].id).fruit == "Eple, Plomme, Kirsebær"
+    # the file's value wins when the column is there
+    import_customers(conn, read_sheet(make_xlsx(tmp_path / "k2.xlsx", [HEADERS, [*ROW_A, "pære"]])), MERGE)
+    assert repo.get_customer(conn, by_name["Kari Nordmann"].id).fruit == "Pære"
+    path = excel_io.export_customers(tmp_path / "ut.xlsx", repo.list_customers(conn), coordinates=False, notes=False)
+    sheet = read_sheet(path)
+    assert sheet.missing == [] and list(sheet.headers.values())[-1] == "Frukt"

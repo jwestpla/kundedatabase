@@ -31,7 +31,10 @@ Resultatet er `dist/Kundedatabase-<versjon>-windows.zip` med `Kundedatabase.exe`
 1. Trykk **Importer…** og velg .xlsx-filen.
 2. Programmet leter etter overskriftene i de 10 første radene. Disse kolonnene brukes:
 
-   `Firma | Sted | Kategori | Fullt navn | E-post | Adresse 1 | Postnummer | Org.nr | Gnr og bnr | Kommunenr | Telefon - Mobilnr.`
+   `Firma | Sted | Kategori | Fullt navn | E-post | Adresse 1 | Postnummer | Org.nr | Gnr og bnr | Kommunenr | Telefon - Mobilnr. | Frukt`
+
+   Kolonnen **Frukt** er ny og kan mangle i gamle filer. Da importeres alt annet som vanlig, og fruktene
+   kundene har fra før, blir stående.
 
    - Store og små bokstaver, mellomrom og tegnsetting spiller ingen rolle («ORG.NR.» = «Org.nr»).
    - Kolonner som mangler, blir tomme. Andre kolonner blir ikke brukt; forhåndsvisningen viser hvilke.
@@ -51,6 +54,9 @@ Detaljer om innholdet:
 
 - **Ledende nuller:** Postnummer, Kommunenr, Org.nr og Telefon lagres som tekst. Har Excel lagret
   postnummer 0150 som tallet 150, blir det rettet til 0150 (det samme gjelder kommunenr).
+- **Frukt** kan inneholde flere frukter: Eple, Pære, Plomme og Kirsebær. Programmet forstår flertall og andre
+  skrivemåter, f.eks. «epler og plommer», «Pære/Plomme», «moreller» (= Kirsebær) og engelske navn, og lagrer
+  dem som «Eple, Plomme». Ukjente ord, som «bringebær», lagres som de er skrevet og gir en advarsel.
 - **Gnr og bnr** kan skrives som `12/3`, `12/3/0`, `12-3`, `gnr 12 bnr 3`, `4642-12/3`, eller flere adskilt med
   komma, semikolon eller «og».
 - **Advarsler** stopper aldri en import eller lagring. Det gjelder ugyldig e-post, Org.nr som ikke er
@@ -64,6 +70,7 @@ Detaljer om innholdet:
   - Dobbeltklikk for å redigere. Detaljene til høyre viser alle feltene og eventuelle advarsler.
 - **Ny kunde / Rediger / Slett:**
   - Kategori kan velges fra listen eller skrives fritt.
+  - Frukt krysses av: Eple, Pære, Plomme, Kirsebær. Annen frukt kan skrives i feltet under.
   - Koordinater kan skrives inn eller limes inn fra Google Maps: høyreklikk stedet og klikk på tallene.
   - Du blir alltid spurt før noe slettes.
 - **Utvalg (☑):**
@@ -74,12 +81,20 @@ Detaljer om innholdet:
   - Lag rader med felt, operator og verdi. Operatorene er inneholder, er lik, starter med, er ikke,
     er tom, er ikke tom og en av (verdier adskilt med komma).
   - Kombiner radene med OG eller ELLER.
+  - **Frukt** sammenlignes som en liste:
+    - «Frukt en av Eple, Pære» gir kundene som har epler eller pærer (eller begge);
+    - «Frukt er ikke Plomme» gir kundene som ikke har plommer;
+    - «Frukt er lik Eple» gir kundene som bare har epler;
+    - «Frukt inneholder Kirsebær» gir kundene som har kirsebær.
+    - Vil du ha kunder med både epler og plommer, lager du to rader («inneholder Eple» og «inneholder
+      Plomme») og kombinerer med OG.
   - *Velg alle treff* gjør treffene til utvalget. *Legg treff til utvalg* legger dem til det du har valgt fra før.
   - Kriteriene kan lagres med navn.
 - **Vis i Google Maps:** åpner kundens punkt, eller søker på adressen hvis kunden mangler koordinater.
 - **Eksporter…:**
   - Velg valgte (☑) kunder, kundene som vises i listen nå, eller alle.
-  - De 11 kolonnene kommer i samme rekkefølge som ved import, så filen kan importeres igjen.
+  - De 12 kolonnene (de 11 opprinnelige + Frukt) kommer i samme rekkefølge som ved import, så filen kan
+    importeres igjen.
   - Koordinater og notater er valgfrie ekstrakolonner, og importen leser dem også.
 
 ## Koordinater
@@ -109,7 +124,7 @@ Slik fungerer oppslagene:
   - Kartet lages med Leaflet, med Kartverket topo eller OpenStreetMap som bakgrunn. Du kan bytte øverst til
     høyre i kartet.
   - Pinnene har farge etter kategori, og det er en tegnforklaring nederst til høyre.
-  - Klikk på en pinne for å se firma, navn, telefon, e-post og lenken «Åpne i Google Maps».
+  - Klikk på en pinne for å se firma, navn, telefon, e-post, frukt og lenken «Åpne i Google Maps».
   - Kunder uten koordinater får du en advarsel om, og de står også listet på kartet.
 - **Kart → Eksporter KML…** lager en fil du kan importere i Google My Maps (mymaps.google.com: lag et nytt
   kart og velg *Importer*).

@@ -18,6 +18,7 @@ COLUMNS = [
     ("company", "Firma", 180),
     ("full_name", "Fullt navn", 150),
     ("category", "Kategori", 100),
+    ("fruit", "Frukt", 120),
     ("place", "Sted", 110),
     ("postcode", "Postnr", 60),
     ("address", "Adresse 1", 150),
@@ -89,7 +90,7 @@ class CustomerList(ttk.Frame):
 
     def _values(self, c: Customer) -> tuple:
         return (CHECKED if c.id in self.checked else UNCHECKED, c.company or "", c.full_name or "",
-                c.category or "", c.place or "", c.postcode or "", c.address or "", c.phone or "", c.email or "",
+                c.category or "", c.fruit or "", c.place or "", c.postcode or "", c.address or "", c.phone or "", c.email or "",
                 c.org_nr or "", c.kommunenr or "", c.gnr_bnr or "", coords_text(c))
 
     def visible_ids(self) -> list[int]:

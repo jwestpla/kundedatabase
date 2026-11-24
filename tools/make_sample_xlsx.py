@@ -13,6 +13,7 @@ The file deliberately contains edge cases:
 - several properties in one cell and the formats 12/3, 12/3/0, 12-3, gnr 12 bnr 3, 4642-12/3
 - empty fields, a row without Firma and Fullt navn, an invalid e-mail
 - two rows for the same customer (merge on import), and a row without Firma (private person)
+- Frukt written in different ways ("Plommer og kirsebær", "Pære/Plomme", "Moreller") and an unknown fruit
 """
 
 from __future__ import annotations
@@ -43,7 +44,9 @@ PLACES = [("0150", "Oslo", "0301"), ("1430", "Ås", "3218"), ("6887", "Lærdal",
           ("8001", "Bodø", "1804"), ("0870", "Oslo", "0301"), ("3080", "Holmestrand", "3903")]
 DUPLICATE_ORG = "899999991"  # synthetic, mod11-valid; only used by the deliberate duplicate rows
 HEADERS = ["  FIRMA ", "sted", "Kategori", "Fullt  navn", "E-POST", "adresse 1", "Postnummer ", "Org.nr.",
-           "Gnr og bnr", "kommunenr", "Telefon - Mobilnr."]
+           "Gnr og bnr", "kommunenr", "Telefon - Mobilnr.", "Frukt "]
+FRUIT_TEXTS = ["Eple", "eple, pære", "Plommer og kirsebær", "Moreller", "Pære/Plomme", "epler", "Eple, Pære, Plomme",
+               "kirsebær", "", "", "Eple, bringebær"]
 
 
 def gnr_bnr(rng: random.Random, kommunenr: str) -> str:
@@ -101,6 +104,7 @@ def make_rows(count: int, seed: int = 42) -> list[list]:
             gnr_bnr(rng, knr),
             int(knr) if rng.random() < 0.5 else knr,
             phone(rng),
+            rng.choice(FRUIT_TEXTS),
         ])
     # Deliberate edge cases
     rows += [

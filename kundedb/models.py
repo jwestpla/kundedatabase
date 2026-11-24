@@ -17,8 +17,13 @@ FIELD_LABELS: dict[str, str] = {
     "gnr_bnr": "Gnr og bnr",
     "kommunenr": "Kommunenr",
     "phone": "Telefon - Mobilnr.",
+    "fruit": "Frukt",  # added after the original 11 columns; several values, e.g. "Eple, Plomme"
 }
 DATA_FIELDS: tuple[str, ...] = tuple(FIELD_LABELS)
+
+# The fruit types a customer can have, in display order. Stored as "Eple, Plomme" (canonical names).
+FRUITS: tuple[str, ...] = ("Eple", "Pære", "Plomme", "Kirsebær")
+LIST_FIELDS: frozenset[str] = frozenset({"fruit"})  # comma-separated values; filters compare them as a set
 
 # A change in any of these means stored (looked-up) coordinates may be wrong.
 ADDRESS_FIELDS: tuple[str, ...] = ("address", "postcode", "place", "kommunenr", "gnr_bnr")
@@ -55,6 +60,7 @@ class Customer:
     gnr_bnr: str | None = None
     kommunenr: str | None = None
     phone: str | None = None
+    fruit: str | None = None
     gnr: int | None = None
     bnr: int | None = None
     lat: float | None = None

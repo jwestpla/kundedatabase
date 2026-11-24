@@ -45,6 +45,7 @@ class Pin:
     lat: float
     lon: float
     category: str
+    fruit: str
     colour: str
     title: str
     name: str
@@ -83,7 +84,7 @@ def build_pins(customers: list[Customer]) -> tuple[list[Pin], list[Customer], di
         key, _label = _category(c)
         label, colour = legend[key]
         town = " ".join(filter(None, (c.postcode, c.place)))
-        pins.append(Pin(lat=c.lat, lon=c.lon, category=label, colour=colour,  # type: ignore[arg-type]
+        pins.append(Pin(lat=c.lat, lon=c.lon, category=label, fruit=c.fruit or "", colour=colour,  # type: ignore[arg-type]
                         title=c.company or c.full_name or "", name=c.full_name if c.company else "",  # type: ignore[arg-type]
                         phone=c.phone or "", email=c.email or "",
                         address=", ".join(filter(None, (c.address, town))), google=google_maps_url(c) or ""))
@@ -130,6 +131,7 @@ function popup(p) {
   for (const line of [p.name, p.address, p.phone ? 'Tlf. ' + p.phone : '']) if (line) d.appendChild(el('div', line));
   if (p.email) { const a = el('a', p.email); a.href = 'mailto:' + p.email; d.appendChild(el('div')).appendChild(a); }
   d.appendChild(el('div', p.category));
+  if (p.fruit) d.appendChild(el('div', 'Frukt: ' + p.fruit));
   if (p.google) { const a = el('a', 'Åpne i Google Maps'); a.href = p.google; a.target = '_blank';
     a.rel = 'noopener'; d.appendChild(a); }
   return d;
@@ -260,12 +262,13 @@ def kml(pins: list[Pin], legend: dict[str, tuple[str, str]], title: str = "Kunde
     for p in pins:
         mark = ET.SubElement(folders[p.category], f"{{{ns}}}Placemark")
         ET.SubElement(mark, f"{{{ns}}}name").text = p.title
-        lines = [p.name, p.address, f"Tlf. {p.phone}" if p.phone else "", p.email, p.category]
+        lines = [p.name, p.address, f"Tlf. {p.phone}" if p.phone else "", p.email, p.category,
+                 f"Frukt: {p.fruit}" if p.fruit else ""]
         ET.SubElement(mark, f"{{{ns}}}description").text = "\n".join(line for line in lines if line)
         ET.SubElement(mark, f"{{{ns}}}styleUrl").text = f"#{style_ids[p.category]}"
         extended = ET.SubElement(mark, f"{{{ns}}}ExtendedData")
         for name, value in (("Fullt navn", p.name), ("Adresse", p.address), ("Telefon", p.phone),
-                            ("E-post", p.email), ("Kategori", p.category)):
+                            ("E-post", p.email), ("Kategori", p.category), ("Frukt", p.fruit)):
             data = ET.SubElement(extended, f"{{{ns}}}Data", name=name)
             ET.SubElement(data, f"{{{ns}}}value").text = value
         point = ET.SubElement(mark, f"{{{ns}}}Point")

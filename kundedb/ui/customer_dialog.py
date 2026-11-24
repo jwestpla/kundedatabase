@@ -10,9 +10,10 @@ from tkinter import ttk
 
 from .. import db, repo, validation
 from ..geocode import address_query, format_coordinates, google_maps_url, outside_norway, parse_coordinates, parse_number
-from ..models import FIELD_LABELS, OTHER_LABELS, Customer
+from ..models import FIELD_LABELS, FRUITS, OTHER_LABELS, Customer
 from .widgets import AMBER, GREEN, GREY, RED, EditDialog, show_errors
 
+ENTRY_FIELDS = tuple(k for k in FIELD_LABELS if k != "fruit")  # fruit has its own checkboxes
 COORD_HINT = ("Høyreklikk stedet i Google Maps og klikk på tallene øverst i menyen – da kopieres de. "
               "Trykk så «Lim inn koordinater».")
 
@@ -35,6 +36,17 @@ class CustomerDialog(EditDialog):
         f.entry("phone", L["phone"], width=20)
         f.entry("email", L["email"], width=32)
         f.entry("org_nr", L["org_nr"], width=14)
+        fruit_box = ttk.Frame(f)
+        self.fruit_vars = {name: tk.BooleanVar(self) for name in FRUITS}
+        for name, var in self.fruit_vars.items():
+            ttk.Checkbutton(fruit_box, text=name, variable=var,
+                            command=self._update_warnings).pack(side="left", padx=(0, 8))
+        f.custom("fruit", L["fruit"], fruit_box)
+        other_box = ttk.Frame(f)
+        self.fruit_other = tk.StringVar(self)
+        ttk.Entry(other_box, textvariable=self.fruit_other, width=22).pack(side="left")
+        ttk.Label(other_box, text="  annen frukt, valgfritt", foreground=GREY).pack(side="left")
+        f.custom("fruit_other", "", other_box)
         f.entry("address", L["address"], width=30, column=1)
         f.entry("postcode", L["postcode"], width=8, column=1)
         f.entry("place", L["place"], width=24, column=1)
@@ -68,21 +80,28 @@ class CustomerDialog(EditDialog):
         self.warn_label.pack(anchor="w", pady=(6, 0))
 
         c = self.original
-        for key in FIELD_LABELS:
+        for key in ENTRY_FIELDS:
             f.set(key, getattr(c, key))
+        known, other = validation.split_fruit(c.fruit)
+        for name, var in self.fruit_vars.items():
+            var.set(name in known)
+        self.fruit_other.set(", ".join(other))
         f.set("notes", c.notes)
         f.set("lat", _coord_text(c.lat))
         f.set("lon", _coord_text(c.lon))
-        for key in FIELD_LABELS:
+        for key in ENTRY_FIELDS:
             f.var(key).trace_add("write", lambda *_: self._update_warnings())
+        self.fruit_other.trace_add("write", lambda *_: self._update_warnings())
         self._update_warnings()
         f.widgets["company"].focus_set()
 
     # --- Helpers ----------------------------------------------------------------
 
     def _collected(self) -> Customer:
-        values = {key: self.form.get(key) for key in FIELD_LABELS}
-        return replace(self.original, **values, notes=self.form.get("notes"))
+        values = {key: self.form.get(key) for key in ENTRY_FIELDS}
+        fruit = [name for name, var in self.fruit_vars.items() if var.get()] + [self.fruit_other.get()]
+        return replace(self.original, **values, fruit=", ".join(f for f in fruit if f.strip()),
+                       notes=self.form.get("notes"))
 
     def _update_warnings(self) -> None:
         w = validation.warnings(validation.normalize(self._collected()))

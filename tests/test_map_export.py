@@ -9,7 +9,8 @@ from kundedb.models import Customer
 
 EVIL = '</script><script>alert("x")</script> & <b>'
 CUSTOMERS = [
-    Customer(id=1, company="Testgård AS", full_name="Kari Testesen", category="Frukt", lat=59.9, lon=10.7,
+    Customer(id=1, company="Testgård AS", full_name="Kari Testesen", category="Frukt", fruit="Eple, Plomme",
+             lat=59.9, lon=10.7,
              phone="91234567", email="kari@example.no", address="Testvegen 1", postcode="0150", place="Oslo"),
     Customer(id=2, full_name=EVIL, category="frukt ", lat=60.0, lon=10.8),
     Customer(id=3, company="Bærgård", category="Bær", lat=61.0, lon=7.0),
@@ -29,6 +30,7 @@ def test_pins_colours_and_missing():
     assert [label for label, _ in legend.values()] == ["Bær", "Frukt", NO_CATEGORY]
     assert by_title["Testgård AS"].name == "Kari Testesen"
     assert by_title["Testgård AS"].address == "Testvegen 1, 0150 Oslo"
+    assert by_title["Testgård AS"].fruit == "Eple, Plomme"
     assert by_title["Testgård AS"].google.endswith("query=59.900000,10.700000")
 
 
@@ -70,6 +72,7 @@ def test_kml_is_valid_xml_with_styles():
     assert EVIL in names  # escaped in the file, read back intact
     coords = [m.find(".//k:coordinates", ns).text for m in marks]
     assert "10.700000,59.900000,0" in coords  # lon,lat
+    assert "Frukt: Eple, Plomme" in text
     assert map_export._kml_colour("#1f77b4") == "ffb4771f"
 
 

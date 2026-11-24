@@ -48,8 +48,13 @@ CREATE TABLE setting (key TEXT PRIMARY KEY, value TEXT);
 INSERT INTO setting (key, value) VALUES ('map_background', 'kartverket'), ('google_maps_api_key', '');
 """
 
+# 3: which fruit the customer grows ("Eple, Pære, Plomme, Kirsebær"; canonical names, comma-separated).
+_V3_FRUIT = """
+ALTER TABLE customer ADD COLUMN fruit TEXT;
+"""
+
 # Append only. Never edit a migration that has shipped; add a new one.
-MIGRATIONS: list[str] = [_SCHEMA_V1, _V2_SETTINGS]
+MIGRATIONS: list[str] = [_SCHEMA_V1, _V2_SETTINGS, _V3_FRUIT]
 
 
 def now_iso() -> str:

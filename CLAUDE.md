@@ -8,6 +8,7 @@ is shared. UI in Norwegian bokmål; code, comments and identifiers in English.
 - v0.1.0: all 9 spec features built: import, CRUD, list/detail, ☑ selection, criteria, geocoding,
   Google Maps, selection map + KML, Excel export. The user approved the plan (stages A–E) on 2026-11-24.
   Features 1–7 were built before the plan was approved, because the first paste of the spec was cut off.
+- Frukt (fruit) column added on the user's request (migration 3, 2026-11-24).
 - Not verified: the Google Maps JS variant of the map (needs a real API key); the Windows build.
 
 ## Environment
@@ -20,7 +21,8 @@ is shared. UI in Norwegian bokmål; code, comments and identifiers in English.
   winfo_* geometry. Stub webbrowser/open_path/messagebox in UI scripts, so nothing opens on the user's screen.
 
 ## Architecture
-- `models.py`: `Customer`, `FIELD_LABELS` (= exact Excel headers, in Excel order), `GEOCODE_SOURCES`.
+- `models.py`: `Customer`, `FIELD_LABELS` (= exact Excel headers, in Excel order; «Frukt» is the 12th, after the
+  user's original 11), `FRUITS` (Eple, Pære, Plomme, Kirsebær), `LIST_FIELDS`, `GEOCODE_SOURCES`.
 - `validation.py` (pure): cleaning (`cell_text`, `pad4`, `normalize`), gnr/bnr parsing, `warnings()`.
   Validation only warns; nothing blocks saving.
 - `repo.py`: all SQL. `save_customer` normalises, clears auto coordinates when an address field changes
@@ -56,6 +58,11 @@ is shared. UI in Norwegian bokmål; code, comments and identifiers in English.
   separate menu item for retrying these.
 - "X valgt av Y": Y = all customers. Velg alle treff / Legg treff til utvalg use criteria over all customers
   (not limited by the quick search). Inverter works on visible rows only.
+- Frukt: several values, stored canonically as "Eple, Plomme" (FRUITS order). `validation.split_fruit` reads
+  plurals, "og"/"/"/";", moreller → Kirsebær and English names. Unknown words are kept as written, after the known
+  ones, with a warning. Filters treat it as a set (see filters.py docstring): en av = any of, er ikke = none of,
+  er lik = exactly, inneholder = has (or substring). An import without the column leaves stored fruit untouched.
+  The dialog has checkboxes plus an «annen frukt» entry.
 - Map and KML use the ☑ customers; with none checked, the app offers the visible list. Customers without
   coordinates are listed in a warning before the map opens, and on the map itself.
 - "Gjeldende filtertreff" in the export dialog = the rows shown in the list (search + criteria when

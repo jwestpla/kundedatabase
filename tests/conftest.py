@@ -31,4 +31,5 @@ def make_xlsx(path: Path, rows: list[list], title: str = "Ark1", extra_sheets: d
 
 
 HEADERS = ["Firma", "Sted", "Kategori", "Fullt navn", "E-post", "Adresse 1", "Postnummer", "Org.nr",
-           "Gnr og bnr", "Kommunenr", "Telefon - Mobilnr."]
+           "Gnr og bnr", "Kommunenr", "Telefon - Mobilnr.", "Frukt"]
+OLD_HEADERS = HEADERS[:11]  # the user's original Excel format (no Frukt column)

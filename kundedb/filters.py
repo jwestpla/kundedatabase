@@ -2,6 +2,13 @@
 
 Comparisons ignore case and extra spaces. Criteria that need a value but have none are ignored,
 so a half-filled row doesn't change the result.
+
+List fields (Frukt: "Eple, Plomme") are compared as sets of values, and the value typed is read like
+an import ("epler og plommer" = Eple, Plomme):
+  inneholder X     – has X (or the text contains X, for partial words)
+  er lik X, Y      – has exactly these
+  er ikke X, Y     – has none of these
+  en av X, Y       – has at least one of these
 """
 
 from __future__ import annotations
@@ -10,7 +17,8 @@ import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from .models import FIELD_LABELS, GEOCODE_SOURCES, OTHER_LABELS, Customer
+from .models import FIELD_LABELS, GEOCODE_SOURCES, LIST_FIELDS, OTHER_LABELS, Customer
+from .validation import split_fruit
 
 CONTAINS, EQUALS, STARTS, NOT_EQUALS, EMPTY, NOT_EMPTY, ONE_OF = (
     "inneholder", "er lik", "starter med", "er ikke", "er tom", "er ikke tom", "en av")
@@ -60,6 +68,8 @@ class Criterion:
         return bool(fold(self.value))
 
     def matches(self, c: Customer) -> bool:
+        if self.field in LIST_FIELDS and self.operator not in NO_VALUE and self.operator != STARTS:
+            return self._matches_list(c)
         text = fold(field_text(c, self.field))
         value = fold(self.value)
         op = self.operator
@@ -78,6 +88,27 @@ class Criterion:
         if op == ONE_OF:
             return text in _items(self.value)
         raise ValueError(op)
+
+
+    def _matches_list(self, c: Customer) -> bool:
+        have = _list_values(field_text(c, self.field))
+        wanted = _list_values(self.value)
+        op = self.operator
+        if op == CONTAINS:
+            return bool(have & wanted) or fold(self.value) in fold(field_text(c, self.field))
+        if op == EQUALS:
+            return have == wanted
+        if op == NOT_EQUALS:
+            return not have & wanted
+        if op == ONE_OF:
+            return bool(have & wanted)
+        raise ValueError(op)
+
+
+def _list_values(text: str | None) -> set[str]:
+    """{'eple', 'plomme'} from 'Epler og plommer' (known fruit by their canonical name, other words as written)."""
+    known, other = split_fruit(text)
+    return {fold(v) for v in (*known, *other)}
 
 
 def _items(value: str) -> set[str]:

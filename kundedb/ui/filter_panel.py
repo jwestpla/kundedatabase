@@ -11,6 +11,7 @@ from ..filters import (
     AND, CONTAINS, FIELD_BY_LABEL, FILTER_FIELDS, LABEL_BY_FIELD, NO_VALUE, OPERATORS, OR, Criterion, FilterSpec,
     load_filters, save_filters,
 )
+from ..models import FRUITS, LIST_FIELDS
 from .widgets import GREY
 
 DEBOUNCE_MS = 250
@@ -40,7 +41,12 @@ class _Row:
     def _update_entry(self) -> None:
         op = self.operator.get()
         self.entry.state(["disabled"] if op in NO_VALUE else ["!disabled"])
-        self.hint.configure(text="skill verdiene med komma" if op == "en av" else "")
+        if FIELD_BY_LABEL.get(self.field.get()) in LIST_FIELDS and op not in NO_VALUE:
+            hint = {"en av": "har minst én av", "er lik": "har akkurat disse", "er ikke": "har ingen av",
+                    "inneholder": "har"}.get(op, "")
+            self.hint.configure(text=f"{hint}: {', '.join(FRUITS)}".lstrip(": "))
+        else:
+            self.hint.configure(text="skill verdiene med komma" if op == "en av" else "")
 
     def _changed(self, now: bool) -> None:
         self._update_entry()

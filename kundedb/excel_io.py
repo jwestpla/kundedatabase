@@ -44,6 +44,7 @@ _ALIASES: dict[str, str] = {
     "orgnummer": "org_nr", "organisasjonsnummer": "org_nr", "gnrbnr": "gnr_bnr", "kommunenummer": "kommunenr",
     "knr": "kommunenr", "telefon": "phone", "mobil": "phone", "mobilnr": "phone", "tlf": "phone",
     "lat": "lat", "lon": "lon", "notat": "notes",
+    "fruktslag": "fruit", "fruktart": "fruit", "frukttype": "fruit", "fruit": "fruit", "frukter": "fruit",
 }
 
 
