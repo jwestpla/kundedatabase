@@ -8,7 +8,7 @@ from tkinter import filedialog, messagebox, ttk
 from typing import TYPE_CHECKING
 
 from .. import excel_io
-from .widgets import GREY, open_path, show_errors
+from .widgets import GREY, grab, open_path, show_errors
 
 if TYPE_CHECKING:
     from .main_window import MainWindow
@@ -57,7 +57,7 @@ class ExportDialog(tk.Toplevel):
         ttk.Button(buttons, text="Eksporter…", command=self.export).pack(side="right", padx=6)
         self.bind("<Escape>", lambda _e: self.destroy())
         self.geometry(f"+{app.winfo_rootx() + 160}+{app.winfo_rooty() + 100}")
-        self.grab_set()
+        grab(self)
 
     def export(self) -> None:
         which = self.which.get()

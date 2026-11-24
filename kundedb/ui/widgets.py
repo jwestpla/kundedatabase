@@ -21,6 +21,14 @@ MISSING_BG = "#fff1dc"  # rows of customers without coordinates
 Choices = Sequence[tuple[str, str]]  # (stored code, displayed label)
 
 
+def grab(win: tk.Toplevel) -> None:
+    """Make a dialog modal. Windows can refuse a grab on a window that isn't shown yet; then it stays modeless."""
+    try:
+        win.grab_set()
+    except tk.TclError:
+        pass
+
+
 def show_errors(parent: tk.Misc, errors: list[str], title: str = "Kan ikke lagre") -> None:
     text = errors[0] if len(errors) == 1 else "\n".join(f"• {e}" for e in errors)
     messagebox.showerror(title, text, parent=parent)
@@ -49,7 +57,7 @@ def show_report(parent: tk.Misc, title: str, text: str, width: int = 90, height:
     win.bind("<Return>", lambda _e: win.destroy())
     top = parent.winfo_toplevel()
     win.geometry(f"+{top.winfo_rootx() + 120}+{top.winfo_rooty() + 80}")
-    win.grab_set()
+    grab(win)
     win.focus_set()
     win.wait_window()
 
@@ -214,7 +222,7 @@ class EditDialog(tk.Toplevel):
         self.geometry(f"+{top.winfo_rootx() + 80}+{top.winfo_rooty() + 40}")
 
     def show(self) -> bool:
-        self.grab_set()
+        grab(self)
         self.focus_set()
         self.wait_window()
         return self.saved

@@ -11,7 +11,7 @@ EVIL = '</script><script>alert("x")</script> & <b>'
 CUSTOMERS = [
     Customer(id=1, company="Testgård AS", full_name="Kari Testesen", category="Frukt", fruit="Eple, Plomme",
              lat=59.9, lon=10.7,
-             phone="91234567", email="kari@example.no", address="Testvegen 1", postcode="0150", place="Oslo"),
+             phone="91234567", email="kari@example.com", address="Testvegen 1", postcode="0150", place="Oslo"),
     Customer(id=2, full_name=EVIL, category="frukt ", lat=60.0, lon=10.8),
     Customer(id=3, company="Bærgård", category="Bær", lat=61.0, lon=7.0),
     Customer(id=4, company="Uten kat", lat=62.0, lon=8.0),

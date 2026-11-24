@@ -97,7 +97,7 @@ def make_rows(count: int, seed: int = 42) -> list[list]:
             place,
             rng.choice(CATEGORIES),
             f"{first} {last}",
-            f"{first.lower()}.{last.lower()}@example.no".replace("ø", "o").replace("æ", "ae").replace("å", "a"),
+            f"{first.lower()}.{last.lower()}@example.com".replace("ø", "o").replace("æ", "ae").replace("å", "a"),
             f"{rng.choice(STREETS)} {rng.randint(1, 120)}" if rng.random() > 0.15 else "",
             int(postcode) if rng.random() < 0.5 else postcode,  # number: leading zero lost
             org,
@@ -108,17 +108,17 @@ def make_rows(count: int, seed: int = 42) -> list[list]:
         ])
     # Deliberate edge cases
     rows += [
-        ["Feilnummer AS", "Ås", "Bær", "Ole Feilsen", "ole@example.no", "Testvegen 1", 1430, "899999990",
+        ["Feilnummer AS", "Ås", "Bær", "Ole Feilsen", "ole@example.com", "Testvegen 1", 1430, "899999990",
          "12/3", 3218, 91234567],  # wrong mod11 check digit
         ["Kortnummer DA", "Lærdal", "Frukt", "Kari Kortsen", "kari@example", "", "6887", "12345678",
          "4642-17/2/0", "4642", ""],  # 8-digit org.nr, invalid e-mail
         ["", "Oslo", "Grønnsaker", "Privat Person", "", "Eksempelgata 5", 150, None, "", 301, "912 34 567"],
         ["", "", "", "", "kun@epost.no", "", None, None, "", None, None],  # no Firma / Fullt navn: skipped
-        ["Dobbel Gård AS", "Bodø", "Melk", "Per Dobbel", "per@example.no", "Fiktivvegen 9", 8001, int(DUPLICATE_ORG),
+        ["Dobbel Gård AS", "Bodø", "Melk", "Per Dobbel", "per@example.com", "Fiktivvegen 9", 8001, int(DUPLICATE_ORG),
          "45/6, 45/7; 46/1 og 47/2", 1804, 47123456],
         ["Dobbel Gård AS", "Bodø", "Melk", "Per Dobbel", "", "", None, DUPLICATE_ORG, "", None,
          "471 23 456"],  # same Org.nr: merges into the row above
-        ["Ugyldig Gnr", "Ottestad", "Korn", "Lars Rar", "lars@example.no", "", "2312", None, "tolv/tre", "3411",
+        ["Ugyldig Gnr", "Ottestad", "Korn", "Lars Rar", "lars@example.com", "", "2312", None, "tolv/tre", "3411",
          None],  # unreadable gnr/bnr
         ["Tom Rad Nesten", None, None, None, None, None, None, None, None, None, None],
     ]

@@ -8,6 +8,10 @@ is shared. UI in Norwegian bokmål; code, comments and identifiers in English.
 - v0.1.0: all 9 spec features built: import, CRUD, list/detail, ☑ selection, criteria, geocoding,
   Google Maps, selection map + KML, Excel export. The user approved the plan (stages A–E) on 2026-11-24.
   Features 1–7 were built before the plan was approved, because the first paste of the spec was cut off.
+- Sharing: public repo jwestpla/kundedatabase, the same set-up as Gjødselplan. Download page docs/index.html on
+  GitHub Pages (main, /docs). Pushing a v* tag runs Windows-bygg and publishes a Release with
+  Kundedatabase-windows.zip (fixed asset name; the page links to releases/latest/download/...).
+  The tag must match kundedb.__version__.
 - Frukt (fruit) column added on the user's request (migration 3, 2026-11-24).
 - Not verified: the Google Maps JS variant of the map (needs a real API key); the Windows build.
 

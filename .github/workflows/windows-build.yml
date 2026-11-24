@@ -1,9 +1,15 @@
 # Builds the Windows version and tests the exe with Python removed from PATH.
-# Run it from the Actions tab ("Run workflow"). The zip is attached to the run as an artifact.
+# Run it from the Actions tab ("Run workflow") for a test build, or push a tag like
+# v0.1.0 to also publish a GitHub Release with Kundedatabase-windows.zip.
 name: Windows-bygg
 
 on:
   workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write  # needed to create the Release on tag pushes
 
 jobs:
   build:
@@ -22,15 +28,30 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -and $_ -notmatch '(?i)python|hostedtoolcache|\.venv|WindowsApps' }) -join ';'
+          $env:PYTHONHOME = $null
+          $env:PYTHONPATH = $null
+          $found = $true
+          try { & python -c "import sys" 2>$null; $found = ($LASTEXITCODE -eq 0) } catch { $found = $false }
+          if ($found) { throw "Python er fortsatt tilgjengelig på PATH" }
+          Write-Host "Python er ikke på PATH."
+
+          # Unpack the zip that will be published, like a user would
           $zip = Get-ChildItem dist\Kundedatabase-*-windows.zip | Select-Object -First 1
           $target = Join-Path $env:RUNNER_TEMP "utpakket"
           Expand-Archive $zip.FullName -DestinationPath $target
           $exe = Join-Path $target "Kundedatabase\Kundedatabase.exe"
+
+          # 1) Default data location: %APPDATA%\Kundedatabase (first start)
           $p = Start-Process -FilePath $exe -ArgumentList "--selftest" -Wait -PassThru
           Get-Content (Join-Path $env:APPDATA "Kundedatabase\selftest.log")
           if ($p.ExitCode -ne 0) { throw "Selvtest feilet ($($p.ExitCode))" }
+          if (Get-ChildItem (Join-Path $target "Kundedatabase") -Filter *.db -File) { throw "Database ved siden av exe" }
 
-      # Needs internet; allowed to fail so a Kartverket outage never blocks a build.
+          # 2) Second start uses the existing data folder
+          $p = Start-Process -FilePath $exe -ArgumentList "--selftest" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Andre start feilet ($($p.ExitCode))" }
+
+      # Needs internet; allowed to fail so a Kartverket outage never blocks a release.
       - name: Geotest (Kartverket over HTTPS, får feile)
         continue-on-error: true
         shell: pwsh
@@ -44,3 +65,26 @@ jobs:
         with:
           name: Kundedatabase-windows
           path: dist/Kundedatabase-*-windows.zip
+
+      - name: Publiser GitHub-release (bare ved tag v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content build\version.txt -Raw).Trim()
+          $tag = $env:GITHUB_REF_NAME
+          if ("v$version" -ne $tag) { throw "Taggen $tag passer ikke med __version__ i kundedb/__init__.py ($version)" }
+          # Fixed asset name, so .../releases/latest/download/Kundedatabase-windows.zip always gives the newest version
+          $zip = Get-ChildItem dist\Kundedatabase-*-windows.zip | Select-Object -First 1
+          Copy-Item $zip.FullName dist\Kundedatabase-windows.zip
+          $name = $env:GITHUB_REPOSITORY.Split('/')[1]
+          $notes = (Get-Content .github\release-notes.md -Raw -Encoding utf8).Replace('{TAG}', $tag).Replace('{REPO}', $env:GITHUB_REPOSITORY).Replace('{OWNER}', $env:GITHUB_REPOSITORY_OWNER).Replace('{NAME}', $name)
+          $notesFile = Join-Path $env:RUNNER_TEMP "release-notes.md"
+          Set-Content -Path $notesFile -Value $notes -Encoding utf8
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag dist\Kundedatabase-windows.zip --clobber
+          } else {
+            gh release create $tag dist\Kundedatabase-windows.zip --title "Kundedatabase $version" --notes-file $notesFile
+          }

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from .. import config, db, excel_io, validation
 from ..excel_io import MERGE, PREVIEW_ROWS, REPLACE, ExcelError, SheetData
 from ..models import FIELD_LABELS
-from .widgets import AMBER, GREY, RED, configure_columns, show_report
+from .widgets import AMBER, GREY, RED, configure_columns, grab, show_report
 
 if TYPE_CHECKING:
     from .main_window import MainWindow
@@ -86,7 +86,7 @@ class ImportDialog(tk.Toplevel):
         self.bind("<Escape>", lambda _e: self.destroy())
         self.geometry(f"900x620+{app.winfo_rootx() + 60}+{app.winfo_rooty() + 30}")
         self.minsize(700, 520)
-        self.grab_set()
+        grab(self)
         if path:
             self.after(10, lambda: self.open_file(Path(path)))
         else:

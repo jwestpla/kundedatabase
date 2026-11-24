@@ -6,7 +6,7 @@ from kundedb.models import Customer
 
 from .conftest import HEADERS, OLD_HEADERS, make_xlsx
 
-ROW_A = ["Testgård AS", "Ås", "Frukt", "Kari Nordmann", "kari@example.no", "Gardsvegen 1", 1430, 923609016,
+ROW_A = ["Testgård AS", "Ås", "Frukt", "Kari Nordmann", "kari@example.com", "Gardsvegen 1", 1430, 923609016,
          "12/3", 3218, 91234567]
 ROW_B = ["", "Oslo", "Bær", "Ola Nordmann", "ola@example", "Bakken 2", 150.0, None, "12-3, 14/1", 301.0,
          "+47 912 34 568"]

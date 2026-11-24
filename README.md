@@ -23,8 +23,32 @@ Andre kommandoer:
 .venv/bin/python tools/make_sample_xlsx.py    # lag sample/kunder_test.xlsx med OPPDIKTEDE kunder
 ```
 
-**Windows-versjon:** kjør `build_windows.bat` på en Windows-PC, eller arbeidsflyten **Windows-bygg** på GitHub.
-Resultatet er `dist/Kundedatabase-<versjon>-windows.zip` med `Kundedatabase.exe`. PC-en trenger ikke Python.
+## Nedlasting for Windows
+
+Brukerne laster ned programmet fra nedlastingssiden **<https://jwestpla.github.io/kundedatabase/>**. Knappen der
+peker alltid til nyeste versjon (`releases/latest/download/Kundedatabase-windows.zip`). Siden er `docs/index.html`
+og vises med GitHub Pages (Settings → Pages → branch `main`, mappe `/docs`).
+
+### Publisere en ny versjon
+
+1. Sett versjonen i `kundedb/__init__.py` (f.eks. `0.1.1`), commit og push.
+2. `git tag v0.1.1 && git push origin v0.1.1`
+3. Arbeidsflyten **Windows-bygg** (`.github/workflows/windows-build.yml`) gjør resten:
+   - kjører testene og bygger med PyInstaller;
+   - pakker ut zip-filen og kjører `--selftest` uten Python på PATH, to ganger;
+   - publiserer en GitHub-release med `Kundedatabase-windows.zip` og teksten i `.github/release-notes.md`.
+
+   Den stopper hvis taggen og `__version__` ikke stemmer.
+
+Vil du bare prøvebygge, kan du kjøre **Windows-bygg** fra fanen Actions (*Run workflow*). Da legges zip-filen ved
+kjøringen, uten at noe publiseres. På en Windows-PC kan du også kjøre `build_windows.bat` lokalt.
+
+Om bygget:
+
+- Det bygges som en mappe, ikke én enkelt fil. Da starter programmet raskere og antivirus slår sjeldnere feil
+  alarm.
+- Exe-filen er ikke signert, så Windows SmartScreen spør første gang («Mer info» → «Kjør likevel»).
+  Nedlastingssiden forklarer dette.
 
 ## Importere Excel-filen din
 
